@@ -36,6 +36,9 @@
 
 #define PCI_MSI_VECTORS_MAX     32
 
+/* Flag for interrupt controller to declare MSI/MSI-X support */
+bool msi_supported;
+
 /* If we get rid of cap allocator, we won't need this. */
 static inline uint8_t msi_cap_sizeof(uint16_t flags)
 {
@@ -116,6 +119,11 @@ int msi_init(struct PCIDevice *dev, uint8_t offset,
     uint16_t flags;
     uint8_t cap_size;
     int config_offset;
+
+    if (!msi_supported) {
+        return -ENOTSUP;
+    }
+
     MSI_DEV_PRINTF(dev,
                    "init offset: 0x%"PRIx8" vector: %"PRId8
                    " 64bit %d mask %d\n",
@@ -155,7 +163,7 @@ int msi_init(struct PCIDevice *dev, uint8_t offset,
     pci_set_word(dev->wmask + msi_data_off(dev, msi64bit), 0xffff);
 
     if (msi_per_vector_mask) {
-        /* Make mask bits 0 to nr_vectors - 1 writeable. */
+        /* Make mask bits 0 to nr_vectors - 1 writable. */
         pci_set_long(dev->wmask + msi_mask_off(dev, msi64bit),
                      0xffffffff >> (PCI_MSI_VECTORS_MAX - nr_vectors));
     }
@@ -164,9 +172,17 @@ int msi_init(struct PCIDevice *dev, uint8_t offset,
 
 void msi_uninit(struct PCIDevice *dev)
 {
-    uint16_t flags = pci_get_word(dev->config + msi_flags_off(dev));
-    uint8_t cap_size = msi_cap_sizeof(flags);
-    pci_del_capability(dev, PCI_CAP_ID_MSIX, cap_size);
+    uint16_t flags;
+    uint8_t cap_size;
+
+    if (!(dev->cap_present & QEMU_PCI_CAP_MSI)) {
+        return;
+    }
+    flags = pci_get_word(dev->config + msi_flags_off(dev));
+    cap_size = msi_cap_sizeof(flags);
+    pci_del_capability(dev, PCI_CAP_ID_MSI, cap_size);
+    dev->cap_present &= ~QEMU_PCI_CAP_MSI;
+
     MSI_DEV_PRINTF(dev, "uninit\n");
 }
 
@@ -241,7 +257,7 @@ void msi_notify(PCIDevice *dev, unsigned int vector)
                    "notify vector 0x%x"
                    " address: 0x%"PRIx64" data: 0x%"PRIx32"\n",
                    vector, address, data);
-    stl_phys(address, data);
+    stl_le_phys(address, data);
 }
 
 /* call this function after updating configs by pci_default_write_config(). */

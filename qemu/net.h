@@ -6,6 +6,7 @@
 #include "qdict.h"
 #include "qemu-option.h"
 #include "net/queue.h"
+#include "vmstate.h"
 
 struct MACAddr {
     uint8_t a[6];
@@ -31,11 +32,14 @@ typedef struct NICConf {
 typedef enum {
     NET_CLIENT_TYPE_NONE,
     NET_CLIENT_TYPE_NIC,
-    NET_CLIENT_TYPE_SLIRP,
+    NET_CLIENT_TYPE_USER,
     NET_CLIENT_TYPE_TAP,
     NET_CLIENT_TYPE_SOCKET,
     NET_CLIENT_TYPE_VDE,
-    NET_CLIENT_TYPE_DUMP
+    NET_CLIENT_TYPE_DUMP,
+    NET_CLIENT_TYPE_BRIDGE,
+
+    NET_CLIENT_TYPE_MAX
 } net_client_type;
 
 typedef void (NetPoll)(VLANClientState *, bool enable);
@@ -120,20 +124,20 @@ int qemu_find_nic_model(NICInfo *nd, const char * const *models,
                         const char *default_model);
 
 void do_info_network(Monitor *mon);
-int do_set_link(Monitor *mon, const QDict *qdict, QObject **ret_data);
 
 /* NIC info */
 
 #define MAX_NICS 8
 
 struct NICInfo {
-    uint8_t macaddr[6];
+    MACAddr macaddr;
     char *model;
     char *name;
     char *devaddr;
     VLANState *vlan;
     VLANClientState *netdev;
-    int used;
+    int used;         /* is this slot in nd_table[] being used? */
+    int instantiated; /* does this NICInfo correspond to an instantiated NIC? */
     int nvectors;
 };
 
@@ -171,14 +175,26 @@ int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
 
 #define DEFAULT_NETWORK_SCRIPT "/etc/qemu-ifup"
 #define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/qemu-ifdown"
-#ifdef __sun__
-#define SMBD_COMMAND "/usr/sfw/sbin/smbd"
-#else
-#define SMBD_COMMAND "/usr/sbin/smbd"
-#endif
+#define DEFAULT_BRIDGE_HELPER CONFIG_QEMU_HELPERDIR "/qemu-bridge-helper"
+#define DEFAULT_BRIDGE_INTERFACE "br0"
 
 void qdev_set_nic_properties(DeviceState *dev, NICInfo *nd);
 
 int net_handle_fd_param(Monitor *mon, const char *param);
+
+#define POLYNOMIAL 0x04c11db6
+unsigned compute_mcast_idx(const uint8_t *ep);
+
+#define vmstate_offset_macaddr(_state, _field)                       \
+    vmstate_offset_array(_state, _field.a, uint8_t,                \
+                         sizeof(typeof_field(_state, _field)))
+
+#define VMSTATE_MACADDR(_field, _state) {                            \
+    .name       = (stringify(_field)),                               \
+    .size       = sizeof(MACAddr),                                   \
+    .info       = &vmstate_info_buffer,                              \
+    .flags      = VMS_BUFFER,                                        \
+    .offset     = vmstate_offset_macaddr(_state, _field),            \
+}
 
 #endif

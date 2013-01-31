@@ -9,17 +9,20 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  *
+ * Contributions after 2012-01-13 are licensed under the terms of the
+ * GNU GPL, version 2 or (at your option) any later version.
  */
 
 #include "qemu-common.h"
 #include "monitor.h"
 #include "qemu-timer.h"
 #include "qemu-log.h"
-#include "sysemu.h"
+#include "migration.h"
+#include "main-loop.h"
+#include "qemu_socket.h"
+#include "slirp/libslirp.h"
 
 #include <sys/time.h>
-
-QEMUClock *rt_clock;
 
 FILE *logfile;
 
@@ -28,10 +31,6 @@ struct QEMUBH
     QEMUBHFunc *cb;
     void *opaque;
 };
-
-void qemu_service_io(void)
-{
-}
 
 Monitor *cur_mon;
 
@@ -56,58 +55,69 @@ void monitor_print_filename(Monitor *mon, const char *filename)
 {
 }
 
-void async_context_push(void)
-{
-}
-
-void async_context_pop(void)
-{
-}
-
-int get_async_context_id(void)
-{
-    return 0;
-}
-
 void monitor_protocol_event(MonitorEvent event, QObject *data)
 {
 }
 
-QEMUBH *qemu_bh_new(QEMUBHFunc *cb, void *opaque)
+int64_t cpu_get_clock(void)
 {
-    QEMUBH *bh;
-
-    bh = qemu_malloc(sizeof(*bh));
-    bh->cb = cb;
-    bh->opaque = opaque;
-
-    return bh;
+    return qemu_get_clock_ns(rt_clock);
 }
 
-int qemu_bh_poll(void)
+int64_t cpu_get_icount(void)
 {
-    return 0;
+    abort();
 }
 
-void qemu_bh_schedule(QEMUBH *bh)
-{
-    bh->cb(bh->opaque);
-}
-
-void qemu_bh_cancel(QEMUBH *bh)
+void qemu_mutex_lock_iothread(void)
 {
 }
 
-void qemu_bh_delete(QEMUBH *bh)
+void qemu_mutex_unlock_iothread(void)
 {
-    qemu_free(bh);
 }
 
-int qemu_set_fd_handler2(int fd,
-                         IOCanReadHandler *fd_read_poll,
-                         IOHandler *fd_read,
-                         IOHandler *fd_write,
-                         void *opaque)
+int use_icount;
+
+void qemu_clock_warp(QEMUClock *clock)
 {
-    return 0;
 }
+
+int qemu_init_main_loop(void)
+{
+    init_clocks();
+    init_timer_alarm();
+    return main_loop_init();
+}
+
+void slirp_update_timeout(uint32_t *timeout)
+{
+}
+
+void slirp_select_fill(int *pnfds, fd_set *readfds,
+                       fd_set *writefds, fd_set *xfds)
+{
+}
+
+void slirp_select_poll(fd_set *readfds, fd_set *writefds,
+                       fd_set *xfds, int select_error)
+{
+}
+
+void migrate_add_blocker(Error *reason)
+{
+}
+
+void migrate_del_blocker(Error *reason)
+{
+}
+
+#ifdef MARSS_QEMU
+uint8_t in_simulation;
+int64_t cpu_get_sim_clock(void);
+
+int64_t cpu_get_sim_clock(void)
+{
+    return cpu_get_clock();
+}
+#endif

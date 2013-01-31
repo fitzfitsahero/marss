@@ -20,8 +20,8 @@ except:
 # Setup the environment
 # env = Environment()
 
-env['CPPPATH'] = []
 env['CPPPATH'].append(qemu_dir)
+env['CPPPATH'].append("%s/%s" % (qemu_dir, "include"))
 env['CPPPATH'].append("%s/%s" % (qemu_dir, "target-i386"))
 env['CPPPATH'].append("%s/%s" % (qemu_dir, "fpu"))
 env['CPPPATH'].append("%s/%s" % (qemu_dir, "x86_64-softmmu"))
@@ -47,7 +47,8 @@ if int(debug):
 
 else:
     env.Append(CCFLAGS = '-g3')
-    env.Append(CCFLAGS = '-O3 -march=native -mtune=native')
+    env.Append(CCFLAGS = '-O3')
+    env.Append(CCFLAGS = '-march=native')
     env.Append(CCFLAGS = '-DDISABLE_ASSERT')
     env.Append(CCFLAGS = '-DDISABLE_LOGGING')
     env.Append(CCFLAGS = optimization_defs)

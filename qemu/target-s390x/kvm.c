@@ -49,13 +49,6 @@
 #define DIAG_KVM_HYPERCALL              0x500
 #define DIAG_KVM_BREAKPOINT             0x501
 
-#define SCP_LENGTH                      0x00
-#define SCP_FUNCTION_CODE               0x02
-#define SCP_CONTROL_MASK                0x03
-#define SCP_RESPONSE_CODE               0x06
-#define SCP_MEM_CODE                    0x08
-#define SCP_INCREMENT                   0x0a
-
 #define ICPT_INSTRUCTION                0x04
 #define ICPT_WAITPSW                    0x1c
 #define ICPT_SOFT_INTERCEPT             0x24
@@ -79,7 +72,7 @@ int kvm_arch_init(KVMState *s)
     return 0;
 }
 
-int kvm_arch_init_vcpu(CPUState *env)
+int kvm_arch_init_vcpu(CPUS390XState *env)
 {
     int ret = 0;
 
@@ -90,12 +83,12 @@ int kvm_arch_init_vcpu(CPUState *env)
     return ret;
 }
 
-void kvm_arch_reset_vcpu(CPUState *env)
+void kvm_arch_reset_vcpu(CPUS390XState *env)
 {
     /* FIXME: add code to reset vcpu. */
 }
 
-int kvm_arch_put_registers(CPUState *env, int level)
+int kvm_arch_put_registers(CPUS390XState *env, int level)
 {
     struct kvm_regs regs;
     int ret;
@@ -121,7 +114,7 @@ int kvm_arch_put_registers(CPUState *env, int level)
     return ret;
 }
 
-int kvm_arch_get_registers(CPUState *env)
+int kvm_arch_get_registers(CPUS390XState *env)
 {
     int ret;
     struct kvm_regs regs;
@@ -142,7 +135,7 @@ int kvm_arch_get_registers(CPUState *env)
     return 0;
 }
 
-int kvm_arch_insert_sw_breakpoint(CPUState *env, struct kvm_sw_breakpoint *bp)
+int kvm_arch_insert_sw_breakpoint(CPUS390XState *env, struct kvm_sw_breakpoint *bp)
 {
     static const uint8_t diag_501[] = {0x83, 0x24, 0x05, 0x01};
 
@@ -153,7 +146,7 @@ int kvm_arch_insert_sw_breakpoint(CPUState *env, struct kvm_sw_breakpoint *bp)
     return 0;
 }
 
-int kvm_arch_remove_sw_breakpoint(CPUState *env, struct kvm_sw_breakpoint *bp)
+int kvm_arch_remove_sw_breakpoint(CPUS390XState *env, struct kvm_sw_breakpoint *bp)
 {
     uint8_t t[4];
     static const uint8_t diag_501[] = {0x83, 0x24, 0x05, 0x01};
@@ -169,23 +162,21 @@ int kvm_arch_remove_sw_breakpoint(CPUState *env, struct kvm_sw_breakpoint *bp)
     return 0;
 }
 
-int kvm_arch_pre_run(CPUState *env, struct kvm_run *run)
+void kvm_arch_pre_run(CPUS390XState *env, struct kvm_run *run)
 {
-    return 0;
 }
 
-int kvm_arch_post_run(CPUState *env, struct kvm_run *run)
+void kvm_arch_post_run(CPUS390XState *env, struct kvm_run *run)
 {
-    return 0;
 }
 
-int kvm_arch_process_irqchip_events(CPUState *env)
+int kvm_arch_process_async_events(CPUS390XState *env)
 {
-    return 0;
+    return env->halted;
 }
 
-static void kvm_s390_interrupt_internal(CPUState *env, int type, uint32_t parm,
-                                        uint64_t parm64, int vm)
+void kvm_s390_interrupt_internal(CPUS390XState *env, int type, uint32_t parm,
+                                 uint64_t parm64, int vm)
 {
     struct kvm_s390_interrupt kvmint;
     int r;
@@ -193,9 +184,6 @@ static void kvm_s390_interrupt_internal(CPUState *env, int type, uint32_t parm,
     if (!env->kvm_state) {
         return;
     }
-
-    env->halted = 0;
-    env->exception_index = -1;
 
     kvmint.type = type;
     kvmint.parm = parm;
@@ -213,32 +201,33 @@ static void kvm_s390_interrupt_internal(CPUState *env, int type, uint32_t parm,
     }
 }
 
-void kvm_s390_virtio_irq(CPUState *env, int config_change, uint64_t token)
+void kvm_s390_virtio_irq(CPUS390XState *env, int config_change, uint64_t token)
 {
     kvm_s390_interrupt_internal(env, KVM_S390_INT_VIRTIO, config_change,
                                 token, 1);
 }
 
-static void kvm_s390_interrupt(CPUState *env, int type, uint32_t code)
+void kvm_s390_interrupt(CPUS390XState *env, int type, uint32_t code)
 {
     kvm_s390_interrupt_internal(env, type, code, 0, 0);
 }
 
-static void enter_pgmcheck(CPUState *env, uint16_t code)
+static void enter_pgmcheck(CPUS390XState *env, uint16_t code)
 {
     kvm_s390_interrupt(env, KVM_S390_PROGRAM_INT, code);
 }
 
-static void setcc(CPUState *env, uint64_t cc)
+static inline void setcc(CPUS390XState *env, uint64_t cc)
 {
-    env->kvm_run->psw_mask &= ~(3ul << 44);
+    env->kvm_run->psw_mask &= ~(3ull << 44);
     env->kvm_run->psw_mask |= (cc & 3) << 44;
 
     env->psw.mask &= ~(3ul << 44);
     env->psw.mask |= (cc & 3) << 44;
 }
 
-static int sclp_service_call(CPUState *env, struct kvm_run *run, uint16_t ipbh0)
+static int kvm_sclp_service_call(CPUS390XState *env, struct kvm_run *run,
+                                 uint16_t ipbh0)
 {
     uint32_t sccb;
     uint64_t code;
@@ -248,39 +237,15 @@ static int sclp_service_call(CPUState *env, struct kvm_run *run, uint16_t ipbh0)
     sccb = env->regs[ipbh0 & 0xf];
     code = env->regs[(ipbh0 & 0xf0) >> 4];
 
-    dprintf("sclp(0x%x, 0x%lx)\n", sccb, code);
-
-    if (sccb & ~0x7ffffff8ul) {
-        fprintf(stderr, "KVM: invalid sccb address 0x%x\n", sccb);
-        r = -1;
-        goto out;
-    }
-
-    switch(code) {
-        case SCLP_CMDW_READ_SCP_INFO:
-        case SCLP_CMDW_READ_SCP_INFO_FORCED:
-            stw_phys(sccb + SCP_MEM_CODE, ram_size >> 20);
-            stb_phys(sccb + SCP_INCREMENT, 1);
-            stw_phys(sccb + SCP_RESPONSE_CODE, 0x10);
-            setcc(env, 0);
-
-            kvm_s390_interrupt_internal(env, KVM_S390_INT_SERVICE,
-                                        sccb & ~3, 0, 1);
-            break;
-        default:
-            dprintf("KVM: invalid sclp call 0x%x / 0x%lx\n", sccb, code);
-            r = -1;
-            break;
-    }
-
-out:
-    if (r < 0) {
+    r = sclp_service_call(env, sccb, code);
+    if (r) {
         setcc(env, 3);
     }
+
     return 0;
 }
 
-static int handle_priv(CPUState *env, struct kvm_run *run, uint8_t ipa1)
+static int handle_priv(CPUS390XState *env, struct kvm_run *run, uint8_t ipa1)
 {
     int r = 0;
     uint16_t ipbh0 = (run->s390_sieic.ipb & 0xffff0000) >> 16;
@@ -288,7 +253,7 @@ static int handle_priv(CPUState *env, struct kvm_run *run, uint8_t ipa1)
     dprintf("KVM: PRIV: %d\n", ipa1);
     switch (ipa1) {
         case PRIV_SCLP_CALL:
-            r = sclp_service_call(env, run, ipbh0);
+            r = kvm_sclp_service_call(env, run, ipbh0);
             break;
         default:
             dprintf("KVM: unknown PRIV: 0x%x\n", ipa1);
@@ -299,17 +264,15 @@ static int handle_priv(CPUState *env, struct kvm_run *run, uint8_t ipa1)
     return r;
 }
 
-static int handle_hypercall(CPUState *env, struct kvm_run *run)
+static int handle_hypercall(CPUS390XState *env, struct kvm_run *run)
 {
-    int r;
-
     cpu_synchronize_state(env);
-    r = s390_virtio_hypercall(env);
+    env->regs[2] = s390_virtio_hypercall(env, env->regs[2], env->regs[1]);
 
-    return r;
+    return 0;
 }
 
-static int handle_diag(CPUState *env, struct kvm_run *run, int ipb_code)
+static int handle_diag(CPUS390XState *env, struct kvm_run *run, int ipb_code)
 {
     int r = 0;
 
@@ -329,24 +292,23 @@ static int handle_diag(CPUState *env, struct kvm_run *run, int ipb_code)
     return r;
 }
 
-static int s390_cpu_restart(CPUState *env)
+static int s390_cpu_restart(CPUS390XState *env)
 {
     kvm_s390_interrupt(env, KVM_S390_RESTART, 0);
-    env->halted = 0;
-    env->exception_index = -1;
+    s390_add_running_cpu(env);
     qemu_cpu_kick(env);
     dprintf("DONE: SIGP cpu restart: %p\n", env);
     return 0;
 }
 
-static int s390_store_status(CPUState *env, uint32_t parameter)
+static int s390_store_status(CPUS390XState *env, uint32_t parameter)
 {
     /* XXX */
     fprintf(stderr, "XXX SIGP store status\n");
     return -1;
 }
 
-static int s390_cpu_initial_reset(CPUState *env)
+static int s390_cpu_initial_reset(CPUS390XState *env)
 {
     int i;
 
@@ -364,14 +326,14 @@ static int s390_cpu_initial_reset(CPUState *env)
     return 0;
 }
 
-static int handle_sigp(CPUState *env, struct kvm_run *run, uint8_t ipa1)
+static int handle_sigp(CPUS390XState *env, struct kvm_run *run, uint8_t ipa1)
 {
     uint8_t order_code;
     uint32_t parameter;
     uint16_t cpu_addr;
     uint8_t t;
     int r = -1;
-    CPUState *target_env;
+    CPUS390XState *target_env;
 
     cpu_synchronize_state(env);
 
@@ -410,7 +372,7 @@ static int handle_sigp(CPUState *env, struct kvm_run *run, uint8_t ipa1)
             r = s390_cpu_initial_reset(target_env);
             break;
         default:
-            fprintf(stderr, "KVM: unknown SIGP: 0x%x\n", ipa1);
+            fprintf(stderr, "KVM: unknown SIGP: 0x%x\n", order_code);
             break;
     }
 
@@ -419,7 +381,7 @@ out:
     return 0;
 }
 
-static int handle_instruction(CPUState *env, struct kvm_run *run)
+static int handle_instruction(CPUS390XState *env, struct kvm_run *run)
 {
     unsigned int ipa0 = (run->s390_sieic.ipa & 0xff00);
     uint8_t ipa1 = run->s390_sieic.ipa & 0x00ff;
@@ -442,31 +404,43 @@ static int handle_instruction(CPUState *env, struct kvm_run *run)
     if (r < 0) {
         enter_pgmcheck(env, 0x0001);
     }
-    return r;
+    return 0;
 }
 
-static int handle_intercept(CPUState *env)
+static bool is_special_wait_psw(CPUS390XState *env)
+{
+    /* signal quiesce */
+    return env->kvm_run->psw_addr == 0xfffUL;
+}
+
+static int handle_intercept(CPUS390XState *env)
 {
     struct kvm_run *run = env->kvm_run;
     int icpt_code = run->s390_sieic.icptcode;
     int r = 0;
 
-    dprintf("intercept: 0x%x (at 0x%lx)\n", icpt_code, env->kvm_run->psw_addr);
+    dprintf("intercept: 0x%x (at 0x%lx)\n", icpt_code,
+            (long)env->kvm_run->psw_addr);
     switch (icpt_code) {
         case ICPT_INSTRUCTION:
             r = handle_instruction(env, run);
             break;
         case ICPT_WAITPSW:
-            /* XXX What to do on system shutdown? */
-            env->halted = 1;
-            env->exception_index = EXCP_HLT;
+            if (s390_del_running_cpu(env) == 0 &&
+                is_special_wait_psw(env)) {
+                qemu_system_shutdown_request();
+            }
+            r = EXCP_HALTED;
+            break;
+        case ICPT_CPU_STOP:
+            if (s390_del_running_cpu(env) == 0) {
+                qemu_system_shutdown_request();
+            }
+            r = EXCP_HALTED;
             break;
         case ICPT_SOFT_INTERCEPT:
             fprintf(stderr, "KVM unimplemented icpt SOFT\n");
             exit(1);
-            break;
-        case ICPT_CPU_STOP:
-            qemu_system_shutdown_request();
             break;
         case ICPT_IO:
             fprintf(stderr, "KVM unimplemented icpt IO\n");
@@ -481,7 +455,7 @@ static int handle_intercept(CPUState *env)
     return r;
 }
 
-int kvm_arch_handle_exit(CPUState *env, struct kvm_run *run)
+int kvm_arch_handle_exit(CPUS390XState *env, struct kvm_run *run)
 {
     int ret = 0;
 
@@ -490,18 +464,30 @@ int kvm_arch_handle_exit(CPUState *env, struct kvm_run *run)
             ret = handle_intercept(env);
             break;
         case KVM_EXIT_S390_RESET:
-            fprintf(stderr, "RESET not implemented\n");
-            exit(1);
+            qemu_system_reset_request();
             break;
         default:
             fprintf(stderr, "Unknown KVM exit: %d\n", run->exit_reason);
             break;
     }
 
+    if (ret == 0) {
+        ret = EXCP_INTERRUPT;
+    }
     return ret;
 }
 
-bool kvm_arch_stop_on_emulation_error(CPUState *env)
+bool kvm_arch_stop_on_emulation_error(CPUS390XState *env)
 {
     return true;
+}
+
+int kvm_arch_on_sigbus_vcpu(CPUS390XState *env, int code, void *addr)
+{
+    return 1;
+}
+
+int kvm_arch_on_sigbus(int code, void *addr)
+{
+    return 1;
 }

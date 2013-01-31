@@ -23,19 +23,18 @@
  */
 
 #include "hw.h"
-#include "sysemu.h"
 #include "loader.h"
 #include "elf.h"
 #include "cris-boot.h"
 
 static void main_cpu_reset(void *opaque)
 {
-    CPUState *env = opaque;
+    CPUCRISState *env = opaque;
     struct cris_load_info *li;
 
     li = env->load_info;
 
-    cpu_reset(env);
+    cpu_state_reset(env);
 
     if (!li) {
         /* nothing more to do.  */
@@ -61,7 +60,7 @@ static uint64_t translate_kernel_address(void *opaque, uint64_t addr)
     return addr - 0x80000000LL;
 }
 
-void cris_load_image(CPUState *env, struct cris_load_info *li)
+void cris_load_image(CPUCRISState *env, struct cris_load_info *li)
 {
     uint64_t entry, high;
     int kcmdline_len;

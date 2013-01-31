@@ -20,9 +20,12 @@
 #ifndef CPU_CRIS_H
 #define CPU_CRIS_H
 
+#include "config.h"
+#include "qemu-common.h"
+
 #define TARGET_LONG_BITS 32
 
-#define CPUState struct CPUCRISState
+#define CPUArchState struct CPUCRISState
 
 #include "cpu-defs.h"
 
@@ -35,6 +38,9 @@
 #define EXCP_BUSFAULT   3
 #define EXCP_IRQ        4
 #define EXCP_BREAK      5
+
+/* CRIS-specific interrupt pending bits.  */
+#define CPU_INTERRUPT_NMI       CPU_INTERRUPT_TGT_EXT_3
 
 /* Register aliases. R0 - R15 */
 #define R_FP  8
@@ -64,6 +70,8 @@
 #define Q_FLAG 0x80000000
 #define M_FLAG 0x40000000
 #define PFIX_FLAG 0x800      /* CRISv10 Only.  */
+#define F_FLAG_V10 0x400
+#define P_FLAG_V10 0x200
 #define S_FLAG 0x200
 #define R_FLAG 0x100
 #define P_FLAG 0x80
@@ -101,7 +109,7 @@ typedef struct CPUCRISState {
 	/* P0 - P15 are referred to as special registers in the docs.  */
 	uint32_t pregs[16];
 
-	/* Pseudo register for the PC. Not directly accessable on CRIS.  */
+	/* Pseudo register for the PC. Not directly accessible on CRIS.  */
 	uint32_t pc;
 
 	/* Pseudo register for the kernel stack.  */
@@ -161,6 +169,8 @@ typedef struct CPUCRISState {
 	void *load_info;
 } CPUCRISState;
 
+#include "cpu-qom.h"
+
 CPUCRISState *cpu_cris_init(const char *cpu_model);
 int cpu_cris_exec(CPUCRISState *s);
 void cpu_cris_close(CPUCRISState *s);
@@ -217,17 +227,17 @@ enum {
 #define MMU_MODE0_SUFFIX _kernel
 #define MMU_MODE1_SUFFIX _user
 #define MMU_USER_IDX 1
-static inline int cpu_mmu_index (CPUState *env)
+static inline int cpu_mmu_index (CPUCRISState *env)
 {
 	return !!(env->pregs[PR_CCS] & U_FLAG);
 }
 
-int cpu_cris_handle_mmu_fault(CPUState *env, target_ulong address, int rw,
-                              int mmu_idx, int is_softmmu);
+int cpu_cris_handle_mmu_fault(CPUCRISState *env, target_ulong address, int rw,
+                              int mmu_idx);
 #define cpu_handle_mmu_fault cpu_cris_handle_mmu_fault
 
 #if defined(CONFIG_USER_ONLY)
-static inline void cpu_clone_regs(CPUState *env, target_ulong newsp)
+static inline void cpu_clone_regs(CPUCRISState *env, target_ulong newsp)
 {
     if (newsp)
         env->regs[14] = newsp;
@@ -252,7 +262,7 @@ static inline void cpu_set_tls(CPUCRISState *env, target_ulong newtls)
 
 #include "cpu-all.h"
 
-static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc,
+static inline void cpu_get_tb_cpu_state(CPUCRISState *env, target_ulong *pc,
                                         target_ulong *cs_base, int *flags)
 {
     *pc = env->pc;
@@ -265,4 +275,15 @@ static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc,
 #define cpu_list cris_cpu_list
 void cris_cpu_list(FILE *f, fprintf_function cpu_fprintf);
 
+static inline bool cpu_has_work(CPUCRISState *env)
+{
+    return env->interrupt_request & (CPU_INTERRUPT_HARD | CPU_INTERRUPT_NMI);
+}
+
+#include "exec-all.h"
+
+static inline void cpu_pc_from_tb(CPUCRISState *env, TranslationBlock *tb)
+{
+    env->pc = tb->pc;
+}
 #endif

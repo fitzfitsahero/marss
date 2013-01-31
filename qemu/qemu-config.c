@@ -2,7 +2,6 @@
 #include "qemu-error.h"
 #include "qemu-option.h"
 #include "qemu-config.h"
-#include "sysemu.h"
 #include "hw/qdev.h"
 
 static QemuOptsList qemu_drive_opts = {
@@ -24,6 +23,7 @@ static QemuOptsList qemu_drive_opts = {
         },{
             .name = "index",
             .type = QEMU_OPT_NUMBER,
+            .help = "index number",
         },{
             .name = "cyls",
             .type = QEMU_OPT_NUMBER,
@@ -47,6 +47,7 @@ static QemuOptsList qemu_drive_opts = {
         },{
             .name = "snapshot",
             .type = QEMU_OPT_BOOL,
+            .help = "enable/disable snapshot mode",
         },{
             .name = "file",
             .type = QEMU_OPT_STRING,
@@ -54,7 +55,8 @@ static QemuOptsList qemu_drive_opts = {
         },{
             .name = "cache",
             .type = QEMU_OPT_STRING,
-            .help = "host cache usage (none, writeback, writethrough, unsafe)",
+            .help = "host cache usage (none, writeback, writethrough, "
+                    "directsync, unsafe)",
         },{
             .name = "aio",
             .type = QEMU_OPT_STRING,
@@ -66,12 +68,15 @@ static QemuOptsList qemu_drive_opts = {
         },{
             .name = "serial",
             .type = QEMU_OPT_STRING,
+            .help = "disk serial number",
         },{
             .name = "rerror",
             .type = QEMU_OPT_STRING,
+            .help = "read error action",
         },{
             .name = "werror",
             .type = QEMU_OPT_STRING,
+            .help = "write error action",
         },{
             .name = "addr",
             .type = QEMU_OPT_STRING,
@@ -79,6 +84,61 @@ static QemuOptsList qemu_drive_opts = {
         },{
             .name = "readonly",
             .type = QEMU_OPT_BOOL,
+            .help = "open drive file as read-only",
+        },{
+            .name = "iops",
+            .type = QEMU_OPT_NUMBER,
+            .help = "limit total I/O operations per second",
+        },{
+            .name = "iops_rd",
+            .type = QEMU_OPT_NUMBER,
+            .help = "limit read operations per second",
+        },{
+            .name = "iops_wr",
+            .type = QEMU_OPT_NUMBER,
+            .help = "limit write operations per second",
+        },{
+            .name = "bps",
+            .type = QEMU_OPT_NUMBER,
+            .help = "limit total bytes per second",
+        },{
+            .name = "bps_rd",
+            .type = QEMU_OPT_NUMBER,
+            .help = "limit read bytes per second",
+        },{
+            .name = "bps_wr",
+            .type = QEMU_OPT_NUMBER,
+            .help = "limit write bytes per second",
+        },{
+            .name = "copy-on-read",
+            .type = QEMU_OPT_BOOL,
+            .help = "copy read data from backing file into image file",
+        },
+        { /* end of list */ }
+    },
+};
+
+static QemuOptsList qemu_iscsi_opts = {
+    .name = "iscsi",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_iscsi_opts.head),
+    .desc = {
+        {
+            .name = "user",
+            .type = QEMU_OPT_STRING,
+            .help = "username for CHAP authentication to target",
+        },{
+            .name = "password",
+            .type = QEMU_OPT_STRING,
+            .help = "password for CHAP authentication to target",
+        },{
+            .name = "header-digest",
+            .type = QEMU_OPT_STRING,
+            .help = "HeaderDigest setting. "
+                    "{CRC32C|CRC32C-NONE|NONE-CRC32C|NONE}",
+        },{
+            .name = "initiator-name",
+            .type = QEMU_OPT_STRING,
+            .help = "Initiator iqn name to use when connecting",
         },
         { /* end of list */ }
     },
@@ -159,11 +219,11 @@ static QemuOptsList qemu_chardev_opts = {
 
 QemuOptsList qemu_fsdev_opts = {
     .name = "fsdev",
-    .implied_opt_name = "fstype",
+    .implied_opt_name = "fsdriver",
     .head = QTAILQ_HEAD_INITIALIZER(qemu_fsdev_opts.head),
     .desc = {
         {
-            .name = "fstype",
+            .name = "fsdriver",
             .type = QEMU_OPT_STRING,
         }, {
             .name = "path",
@@ -171,18 +231,32 @@ QemuOptsList qemu_fsdev_opts = {
         }, {
             .name = "security_model",
             .type = QEMU_OPT_STRING,
+        }, {
+            .name = "writeout",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "readonly",
+            .type = QEMU_OPT_BOOL,
+
+        }, {
+            .name = "socket",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "sock_fd",
+            .type = QEMU_OPT_NUMBER,
         },
+
         { /*End of list */ }
     },
 };
 
 QemuOptsList qemu_virtfs_opts = {
     .name = "virtfs",
-    .implied_opt_name = "fstype",
+    .implied_opt_name = "fsdriver",
     .head = QTAILQ_HEAD_INITIALIZER(qemu_virtfs_opts.head),
     .desc = {
         {
-            .name = "fstype",
+            .name = "fsdriver",
             .type = QEMU_OPT_STRING,
         }, {
             .name = "path",
@@ -193,6 +267,18 @@ QemuOptsList qemu_virtfs_opts = {
         }, {
             .name = "security_model",
             .type = QEMU_OPT_STRING,
+        }, {
+            .name = "writeout",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "readonly",
+            .type = QEMU_OPT_BOOL,
+        }, {
+            .name = "socket",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "sock_fd",
+            .type = QEMU_OPT_NUMBER,
         },
 
         { /*End of list */ }
@@ -297,20 +383,21 @@ static QemuOptsList qemu_mon_opts = {
     },
 };
 
-#ifdef CONFIG_SIMPLE_TRACE
 static QemuOptsList qemu_trace_opts = {
     .name = "trace",
     .implied_opt_name = "trace",
     .head = QTAILQ_HEAD_INITIALIZER(qemu_trace_opts.head),
     .desc = {
         {
+            .name = "events",
+            .type = QEMU_OPT_STRING,
+        },{
             .name = "file",
             .type = QEMU_OPT_STRING,
         },
-        { /* end if list */ }
+        { /* end of list */ }
     },
 };
-#endif
 
 static QemuOptsList qemu_cpudef_opts = {
     .name = "cpudef",
@@ -386,6 +473,12 @@ QemuOptsList qemu_spice_opts = {
             .name = "disable-ticketing",
             .type = QEMU_OPT_BOOL,
         },{
+            .name = "disable-copy-paste",
+            .type = QEMU_OPT_BOOL,
+        },{
+            .name = "sasl",
+            .type = QEMU_OPT_BOOL,
+        },{
             .name = "x509-dir",
             .type = QEMU_OPT_STRING,
         },{
@@ -431,7 +524,7 @@ QemuOptsList qemu_spice_opts = {
             .name = "playback-compression",
             .type = QEMU_OPT_BOOL,
         },
-        { /* end if list */ }
+        { /* end of list */ }
     },
 };
 
@@ -447,7 +540,76 @@ QemuOptsList qemu_option_rom_opts = {
             .name = "romfile",
             .type = QEMU_OPT_STRING,
         },
-        { /* end if list */ }
+        { /* end of list */ }
+    },
+};
+
+static QemuOptsList qemu_machine_opts = {
+    .name = "machine",
+    .implied_opt_name = "type",
+    .merge_lists = true,
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_machine_opts.head),
+    .desc = {
+        {
+            .name = "type",
+            .type = QEMU_OPT_STRING,
+            .help = "emulated machine"
+        }, {
+            .name = "accel",
+            .type = QEMU_OPT_STRING,
+            .help = "accelerator list",
+        }, {
+            .name = "kernel_irqchip",
+            .type = QEMU_OPT_BOOL,
+            .help = "use KVM in-kernel irqchip",
+        }, {
+            .name = "kvm_shadow_mem",
+            .type = QEMU_OPT_SIZE,
+            .help = "KVM shadow MMU size",
+        }, {
+            .name = "kernel",
+            .type = QEMU_OPT_STRING,
+            .help = "Linux kernel image file",
+        }, {
+            .name = "initrd",
+            .type = QEMU_OPT_STRING,
+            .help = "Linux initial ramdisk file",
+        }, {
+            .name = "append",
+            .type = QEMU_OPT_STRING,
+            .help = "Linux kernel command line",
+        }, {
+            .name = "dtb",
+            .type = QEMU_OPT_STRING,
+            .help = "Linux kernel device tree file",
+        },
+        { /* End of list */ }
+    },
+};
+
+QemuOptsList qemu_boot_opts = {
+    .name = "boot-opts",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_boot_opts.head),
+    .desc = {
+        /* the three names below are not used now */
+        {
+            .name = "order",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "once",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "menu",
+            .type = QEMU_OPT_STRING,
+        /* following are really used */
+        }, {
+            .name = "splash",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "splash-time",
+            .type = QEMU_OPT_STRING,
+        },
+        { /*End of list */ }
     },
 };
 
@@ -461,10 +623,11 @@ static QemuOptsList *vm_config_groups[32] = {
     &qemu_global_opts,
     &qemu_mon_opts,
     &qemu_cpudef_opts,
-#ifdef CONFIG_SIMPLE_TRACE
     &qemu_trace_opts,
-#endif
     &qemu_option_rom_opts,
+    &qemu_machine_opts,
+    &qemu_boot_opts,
+    &qemu_iscsi_opts,
     NULL,
 };
 
