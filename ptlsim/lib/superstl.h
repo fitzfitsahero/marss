@@ -850,10 +850,10 @@ namespace superstl {
     return crc;
   }
 
-  template <class T>
+  /*template <class T>
   static inline CRC32& operator ,(CRC32& crc, const T& v) {
     return crc << v;
-  }
+  }*/
 
   struct RandomNumberGenerator {
     W32 s1, s2, s3;

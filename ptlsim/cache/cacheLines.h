@@ -63,11 +63,11 @@ namespace Memory {
         return os;
     }
 
-    static inline ostream& operator ,(ostream& os, const CacheLine& line)
+    /*static inline ostream& operator ,(ostream& os, const CacheLine& line)
     {
         line.print(os);
         return os;
-    }
+    }*/
 
     // A base struct to provide a pointer to CacheLines without any need
     // of a template
@@ -174,7 +174,7 @@ namespace Memory {
             return os;
         }
 
-    template <int SET_COUNT, int WAY_COUNT, int LINE_SIZE, int LATENCY>
+    /*template <int SET_COUNT, int WAY_COUNT, int LINE_SIZE, int LATENCY>
         static inline ostream& operator ,(ostream& os, const
                 CacheLines<SET_COUNT, WAY_COUNT, LINE_SIZE, LATENCY>&
                 cacheLines)
@@ -182,6 +182,7 @@ namespace Memory {
             cacheLines.print(os);
             return os;
         }
+        */
 
     template <int SET_COUNT, int WAY_COUNT, int LINE_SIZE, int LATENCY>
         CacheLines<SET_COUNT, WAY_COUNT, LINE_SIZE, LATENCY>::CacheLines(int readPorts, int writePorts) :
