@@ -180,11 +180,11 @@ bool MemoryController::handle_interconnect_cb(void *arg)
 
 void MemoryController::print(ostream& os) const
 {
-	os << "---Memory-Controller: ", get_name(), endl;
+	os << "---Memory-Controller: " << get_name() << endl;
 	if(pendingRequests_.count() > 0)
-		os << "Queue : ", pendingRequests_, endl;
-    os << "banksUsed_: ", banksUsed_, endl;
-	os << "---End Memory-Controller: ", get_name(), endl;
+		os << "Queue : " << pendingRequests_ << endl;
+    os << "banksUsed_: " << banksUsed_ << endl;
+	os << "---End Memory-Controller: " << get_name() << endl;
 }
 
 bool MemoryController::access_completed_cb(void *arg)

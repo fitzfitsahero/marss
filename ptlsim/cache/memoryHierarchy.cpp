@@ -203,7 +203,7 @@ void MemoryHierarchy::dump_info(ostream& os)
 	print_map(os);
 
 	os << "Events in Queue:\n";
-	os << eventQueue_, "\n";
+	os << eventQueue_ << "\n";
 
     foreach(i, NUM_SIM_CORES) {
         RequestPool* pool = requestPool_[i];
@@ -229,7 +229,7 @@ void MemoryHierarchy::dump_info(ostream& os)
 		os << *(allInterconnects_[i]);
 	}
 
-	os << "::someStructIsFull_: ", someStructIsFull_, endl;
+	os << "::someStructIsFull_: " << someStructIsFull_ << endl;
 }
 
 void MemoryHierarchy::print_map(ostream& os)

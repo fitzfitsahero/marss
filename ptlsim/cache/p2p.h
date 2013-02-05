@@ -60,7 +60,7 @@ class P2PInterconnect : public Interconnect
 		void print_map(ostream& os);
 
 		void print(ostream& os) const {
-			os << "--P2P Interconnect: ", get_name(), endl;
+			os << "--P2P Interconnect: " << get_name() << endl;
 		}
 
 		int get_delay() {
