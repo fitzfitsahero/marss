@@ -21,16 +21,16 @@ namespace OutOfOrderModel {
 
 void MemoryHierarchy::icache_wakeup_wrapper(int coreid, W64 physaddr)
 {
-	memdebug("ICache access completed for core: ", coreid,
-			" address: ", hexstring(physaddr, 48), endl);
+	memdebug("ICache access completed for core: " << coreid <<
+			" address: " << hexstring(physaddr, 48) <, endl);
 }
 
 void MemoryHierarchy::dcache_wakeup_wrapper(int coreid, int threadid,
 		int robid, W64 seq, W64 physaddr)
 {
-	memdebug("DCache access completed for core: ", coreid,
-			" thread: ", threadid, " rob: ", robid,
-			" address: ", hexstring(physaddr, 48), endl);
+	memdebug("DCache access completed for core: " << coreid <<
+			" thread: " << threadid << " rob: " << robid <<
+			" address: " << hexstring(physaddr, 48) << endl);
 }
 
 Config config;
@@ -41,7 +41,7 @@ ostream ptl_logfile;
 
 bool test_signal_cb(void *arg)
 {
-	ptl_logfile << "Test signal fired with arg: ", *((int*)arg), endl, flush;
+	ptl_logfile << "Test signal fired with arg: " << *((int*)arg) << endl << flush;
 	return true;
 }
 
@@ -60,13 +60,13 @@ void test_event_add(MemoryHierarchy* memoryHierarchy)
 	arg[1] = 1;
 	arg[2] = 2;
 
-	ptl_logfile << "Before adding events to queue", endl, flush;
+	ptl_logfile << "Before adding events to queue" << endl << flush;
 
 	for(int i=0; i < 100; i++) {
 		memoryHierarchy->add_event(sig1, i, (void*)(&arg[i % 3]));
 	}
 
-	ptl_logfile << "Added events into queue, now printing", endl, flush;
+	ptl_logfile << "Added events into queue, now printing" << endl << flush;
 	memoryHierarchy->dump_info(ptl_logfile);
 	ptl_logfile << flush;
 
@@ -101,7 +101,7 @@ void test_clock(MemoryHierarchy* memoryHierarchy)
 		if(sim_cycle == 5)
 			memoryHierarchy->add_event(sig2, 2, (void*)(&arg[1]));
 		memoryHierarchy->clock();
-		ptl_logfile << "sim_cycle - ", sim_cycle, endl, flush;
+		ptl_logfile << "sim_cycle - " << sim_cycle << endl << flush;
 	}
 
 	cout << "..Done" << endl;
@@ -115,15 +115,15 @@ void test_access_fast_path(MemoryHierarchy *memoryHierarchy)
 
 	ret_val = memoryHierarchy->access_cache(0, 0, 0, 0, 0, 0x10, true, false);
 
-	ptl_logfile << "access ret value ", ret_val, endl;
+	ptl_logfile << "access ret value " << ret_val << endl;
 
 	for(sim_cycle; sim_cycle < 1500; sim_cycle++) {
-		ptl_logfile << "Clock: ", sim_cycle, endl;
+		ptl_logfile << "Clock: " << sim_cycle << endl;
 		if(sim_cycle == 3) {
 			ret_val = memoryHierarchy->access_cache(0, 0, 0, 0, 0,
 					0x86, true, false);
 
-			ptl_logfile << "access ret value ", ret_val, endl;
+			ptl_logfile << "access ret value " << ret_val << endl;
 		}
 		memoryHierarchy->clock();
 		memoryHierarchy->dump_info(ptl_logfile);
@@ -154,7 +154,7 @@ struct TestQueueLink {
 	void reset(int i) { idx = i; }
 	void init() { }
 	void print(ostream& os) {
-		os << "idx[", idx, "] ";
+		os << "idx[" << idx << "] ";
 	}
 
 	bool operator <(TestQueueLink& t) {
@@ -180,25 +180,25 @@ void test_fix_queuelink()
 		TestQueueLink* entry = testQueue.alloc();
 		entryArr[i] = entry;
 	}
-	ptl_logfile << "After allocation: ", testQueue, endl;
+	ptl_logfile << "After allocation: " << testQueue << endl;
 
 	foreach(j, 6) {
 		testQueue.free(entryArr[j+2]);
 	}
-	ptl_logfile << "After freeing 4 entries: ", testQueue, endl;
+	ptl_logfile << "After freeing 4 entries: " << testQueue << endl;
 	ptl_logfile << "All entries: ";
 	testQueue.print_all(ptl_logfile);
 	ptl_logfile << endl;
 
 	// Now unlink the entry from tail and add to head + 1
-	ptl_logfile << "Before unlinking tail entry: ", testQueue, endl;
+	ptl_logfile << "Before unlinking tail entry: " << testQueue << endl;
 	TestQueueLink* et1 = testQueue.tail->data;
 	testQueue.unlink(et1);
-	ptl_logfile << "After unlinking tail entry: ", testQueue, endl;
+	ptl_logfile << "After unlinking tail entry: " << testQueue << endl;
 	testQueue.insert_before(et1, testQueue.head->data);
-	ptl_logfile << "After insert tail entry: ", testQueue, endl;
+	ptl_logfile << "After insert tail entry: " << testQueue << endl;
 
-	cout << "Done", endl;
+	cout << "Done" << endl;
 }
 
 struct FixStateListTester : public FixStateListObject
@@ -206,7 +206,7 @@ struct FixStateListTester : public FixStateListObject
 	void init() {
 	}
 	ostream& print(ostream& os) const{
-		os << "A FixStateListTester Object[", idx, "]";
+		os << "A FixStateListTester Object[" << idx << "]";
 		return os;
 	}
 };
@@ -226,28 +226,28 @@ void test_fix_statelist()
 		FixStateListTester* entry = testList.alloc();
 		entryArr[i] = entry;
 	}
-	ptl_logfile << "After allocation: ", testList, endl;
+	ptl_logfile << "After allocation: " << testList << endl;
 
 	foreach(j, 6) {
 		testList.free(entryArr[j+2]);
 	}
 
-	ptl_logfile << "After freeing 6 entries: ", testList, endl;
+	ptl_logfile << "After freeing 6 entries: " << testList << endl;
 	ptl_logfile << "All entries: ";
 	testList.print_all(ptl_logfile);
 	ptl_logfile << endl, flush;
 
 	// Now unlink entry from tail and add to head
-	ptl_logfile << "Before unlinking the tail entry: ", testList, endl,
+	ptl_logfile << "Before unlinking the tail entry: " << testList << endl <<
 			flush;
 	FixStateListTester* tail = testList.tail();
 	assert(tail);
 	testList.unlink(tail);
-	ptl_logfile << "After unlink: ", testList, endl, flush;
+	ptl_logfile << "After unlink: " << testList << endl << flush;
 	FixStateListTester* head = testList.head();
 	assert(head);
 	testList.insert_after(tail, head);
-	ptl_logfile << "After inserting : ", testList, endl;
+	ptl_logfile << "After inserting : " << testList << endl;
 
 	cout << "Done..\n";
 	cout << "Done..\n";
@@ -273,7 +273,7 @@ void test_trace(MemoryHierarchy *memoryHierarchy, char *filename)
 		file >> line;
 		if(!file) break;
 
-//		cout << "Line read: ", line, endl, flush;
+//		cout << "Line read: " << line << endl << flush;
 		line = line.strip();
 
 		if(line.size() == 0 || line.buf[0] == '#')
@@ -285,14 +285,14 @@ void test_trace(MemoryHierarchy *memoryHierarchy, char *filename)
 		foreach(i, splits.count()) {
 			if(i == 0) {
 				// Clock
-//				cout << "Buffer for clock: ", splits[i]->buf, " ";
+//				cout << "Buffer for clock: " << splits[i]->buf << " ";
 				sscanf(splits[i]->buf, "%llu", &clock);
 
 				// Loop untill sim_cycle reaches to clock
 				for(sim_cycle; sim_cycle < clock; sim_cycle++) {
 					cout.seek(0);
-					cout << "Execuing cycle: ", sim_cycle, " \r";
-					ptl_logfile << "Executing cycle: ", sim_cycle, "\n";
+					cout << "Execuing cycle: " << sim_cycle << " \r";
+					ptl_logfile << "Executing cycle: " << sim_cycle << "\n";
 					memoryHierarchy->clock();
 				}
 
@@ -324,18 +324,18 @@ void test_strip()
 {
 	stringbuf testStr;
 	testStr << " \t#\t  Test string with a:0:0x2020 \t \n";
-	cout << "String before strip: ", testStr;
-	cout << "length before: ", strlen(testStr.buf), endl;
+	cout << "String before strip: " << testStr;
+	cout << "length before: " << strlen(testStr.buf) << endl;
 	testStr = testStr.strip();
-	cout << "String after strip: ", testStr, endl;
-	cout << "length after: ", strlen(testStr.buf), endl;
+	cout << "String after strip: " << testStr << endl;
+	cout << "length after: " << strlen(testStr.buf) << endl;
 
 	dynarray<stringbuf*> strings;
 	const char *chr = " \t\n";
 	testStr.split(strings, chr);
 
 	foreach(i, strings.count()) {
-		cout << "Split[", i, "]: ", *strings[i], endl;
+		cout << "Split[" << i << "]: " << *strings[i] << endl;
 	}
 }
 
@@ -343,14 +343,14 @@ int main(int argc, char *argv[])
 {
 
 	ptl_logfile.open("mem_test.log");
-	ptl_logfile << "Starting mem test log\n", flush;
+	ptl_logfile << "Starting mem test log\n" << flush;
 
-	ptl_logfile << "NUMBER_OF_CORES = ", NUMBER_OF_CORES, endl, flush;
+	ptl_logfile << "NUMBER_OF_CORES = " << NUMBER_OF_CORES << endl << flush;
 
 	config.number_of_cores = 4;
 	config.cores_per_L2 = 4;
 
-	ptl_logfile << "config.number_of_cores ", config.number_of_cores, endl, flush;
+	ptl_logfile << "config.number_of_cores " << config.number_of_cores << endl << flush;
 
 	sim_cycle = 0;
 	OutOfOrderMachine machine;
