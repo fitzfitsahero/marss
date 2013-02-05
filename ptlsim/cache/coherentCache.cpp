@@ -311,7 +311,7 @@ void CacheController::send_message(CacheQueueEntry *queueEntry,
     evictEntry->line    = queueEntry->line;
     evictEntry->request->incRefCounter();
 
-    //memdebug("Created Evict message: ", *evictEntry, endl);
+    //memdebug("Created Evict message: " << *evictEntry << endl);
     ADD_HISTORY_ADD(evictEntry->request);
 
     evictEntry->eventFlags[CACHE_WAIT_INTERCONNECT_EVENT]++;

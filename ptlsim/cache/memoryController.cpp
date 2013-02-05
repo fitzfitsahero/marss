@@ -98,7 +98,7 @@ bool MemoryController::handle_interconnect_cb(void *arg)
 {
 	Message *message = (Message*)arg;
 
-	memdebug("Received message in Memory controller: ", *message, endl);
+	memdebug("Received message in Memory controller: " << *message << endl);
 
 	if(message->hasData && message->request->get_type() !=
 			MEMORY_OP_UPDATE)
@@ -233,7 +233,7 @@ bool MemoryController::access_completed_cb(void *arg)
     if(!queueEntry->annuled) {
 
         /* Send response back to cache */
-        memdebug("Memory access done for Request: ", *queueEntry->request,
+        memdebug("Memory access done for Request: " << *queueEntry->request <<
                 endl);
 
         wait_interconnect_cb(queueEntry);
@@ -267,7 +267,7 @@ bool MemoryController::wait_interconnect_cb(void *arg)
 	message.request = queueEntry->request;
 	message.hasData = true;
 
-	memdebug("Memory sending message: ", message);
+	memdebug("Memory sending message: " << message);
 	success = cacheInterconnect_->get_controller_request_signal()->
 		emit(&message);
 	/* Free the message */

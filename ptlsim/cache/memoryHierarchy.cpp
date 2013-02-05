@@ -101,7 +101,7 @@ void MemoryHierarchy::clock()
 	while(!eventQueue_.empty()) {
 		event = eventQueue_.head();
 		if(event->get_clock() <= sim_cycle) {
-			memdebug("Executing event: ", *event);
+			memdebug("Executing event: " << *event);
 			eventQueue_.free(event);
 			assert(event->execute());
 		} else {
@@ -308,15 +308,15 @@ void MemoryHierarchy::add_event(Signal *signal, int delay, void *arg)
 
 	// If delay is 0, execute without sorting the queue
 	if(delay == 0) {
-		memdebug("Executing event: ", *event);
+		memdebug("Executing event: " << *event);
 		assert(event->execute());
 
 		eventQueue_.free(event);
-        /* memdebug("Queue after add: \n", eventQueue_); */
+        /* memdebug("Queue after add: \n" << eventQueue_); */
 		return;
 	}
 
-	memdebug("Adding event:", *event);
+	memdebug("Adding event:" << *event);
 
     sort_event_queue(event);
 
