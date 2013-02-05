@@ -334,7 +334,7 @@ namespace superstl {
   DeclareStringBufToStream(hexstring);
 
   static inline ostream& operator ,(ostream& os, const byte* v) {
-	  return os << "0x", hexstring((unsigned long)(v), 64);
+	  return os << "0x" << hexstring((unsigned long)(v), 64);
   }
 
   struct bytestring {
@@ -850,10 +850,10 @@ namespace superstl {
     return crc;
   }
 
-  /*template <class T>
+  template <class T>
   static inline CRC32& operator ,(CRC32& crc, const T& v) {
     return crc << v;
-  }*/
+  }
 
   struct RandomNumberGenerator {
     W32 s1, s2, s3;

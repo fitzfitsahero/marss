@@ -292,7 +292,7 @@ void CPUController::wakeup_dependents(CPUControllerQueueEntry *queueEntry)
 
 void CPUController::finalize_request(CPUControllerQueueEntry *queueEntry)
 {
-	memdebug("Controller: ", get_name() << " Finalizing entry: " <<
+	memdebug("Controller: " << get_name() << " Finalizing entry: " <<
 			*queueEntry << endl);
 	MemoryRequest *request = queueEntry->request;
 
