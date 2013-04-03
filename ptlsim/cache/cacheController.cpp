@@ -485,30 +485,32 @@ bool CacheController::cache_insert_cb(void *arg)
 	queueEntry->eventFlags[CACHE_INSERT_EVENT]--;
 
     if(pendingRequests_.isFull()) {
-        goto retry_insert;
+	    queueEntry->eventFlags[CACHE_INSERT_EVENT]++;
+	    marss_add_event(&cacheInsert_, 1,
+			(void*)(queueEntry));
+	    return true;
     }
 
 	if(cacheLines_->get_port(queueEntry->request)) {
 		W64 oldTag = InvalidTag<W64>::INVALID;
-		CacheLine *line = cacheLines_->insert(queueEntry->request,
-				oldTag);
+	    CacheLine *line = cacheLines_->insert(queueEntry->request,
+				    oldTag);
 		if(oldTag != InvalidTag<W64>::INVALID && oldTag != (W64)-1) {
             if(wt_disabled_ && line->state == LINE_MODIFIED) {
-                send_update_message(queueEntry, oldTag);
-			}
-		}
+                 send_update_message(queueEntry, oldTag);
+		    }
+	    }
 
-        line->state = LINE_VALID;
-        line->init(cacheLines_->tagOf(queueEntry->request->
-                    get_physical_address()));
+         line->state = LINE_VALID;
+         line->init(cacheLines_->tagOf(queueEntry->request->
+                     get_physical_address()));
 
-		queueEntry->eventFlags[CACHE_INSERT_COMPLETE_EVENT]++;
-		marss_add_event(&cacheInsertComplete_,
-				cacheAccessLatency_, queueEntry);
+	    queueEntry->eventFlags[CACHE_INSERT_COMPLETE_EVENT]++;
+    	marss_add_event(&cacheInsertComplete_,
+		        cacheAccessLatency_, queueEntry);
 		return true;
 	}
 
-retry_insert:
 	queueEntry->eventFlags[CACHE_INSERT_EVENT]++;
 	marss_add_event(&cacheInsert_, 1,
 			(void*)(queueEntry));
@@ -575,7 +577,12 @@ bool CacheController::cache_access_cb(void *arg)
                         line->state = LINE_MODIFIED;
 					} else {
 						if(!send_update_message(queueEntry))
-							goto retry_cache_access;
+						//	goto retry_cache_access;
+                            /* No port available yet, retry next cycle */
+	                        queueEntry->eventFlags[CACHE_ACCESS_EVENT]++;
+	                        marss_add_event(&cacheAccess_, 1, arg);
+
+	                        return true;
 					}
 				}
 			} else if(type == MEMORY_OP_UPDATE){
@@ -591,7 +598,12 @@ bool CacheController::cache_access_cb(void *arg)
 
                 if(!wt_disabled_) {
                     if(!send_update_message(queueEntry)) {
-                        goto retry_cache_access;
+                     //   goto retry_cache_access;
+                        /* No port available yet, retry next cycle */
+	                    queueEntry->eventFlags[CACHE_ACCESS_EVENT]++;
+	                    marss_add_event(&cacheAccess_, 1, arg);
+
+	                    return true;
                     }
                 }
 			} else if(type == MEMORY_OP_EVICT) {
@@ -633,7 +645,12 @@ bool CacheController::cache_access_cb(void *arg)
                 // Send to lower cache/memory if write-back mode
                 if(wt_disabled_) {
                     if(!send_update_message(queueEntry)) {
-                        goto retry_cache_access;
+                        // goto retry_cache_access;
+                        /* No port available yet, retry next cycle */
+	                    queueEntry->eventFlags[CACHE_ACCESS_EVENT]++;
+	                    marss_add_event(&cacheAccess_, 1, arg);
+
+	                    return true;
                     }
                 }
 			}
@@ -651,7 +668,7 @@ bool CacheController::cache_access_cb(void *arg)
 		}
 	}
 
-retry_cache_access:
+//retry_cache_access:
     /* No port available yet, retry next cycle */
 	queueEntry->eventFlags[CACHE_ACCESS_EVENT]++;
 	marss_add_event(&cacheAccess_, 1, arg);
