@@ -343,6 +343,10 @@
 
 #define MSR_VM_HSAVE_PA                 0xc0010117
 
+/* AMD PowerNow! MSRs */
+#define MSR_FIDVID_CTL                  0xc0010041
+#define MSR_FIDVID_STATUS               0xc0010042
+
 /* cpuid_features bits */
 #define CPUID_FP87 (1 << 0)
 #define CPUID_VME  (1 << 1)
@@ -761,6 +765,12 @@ typedef struct CPUX86State {
     XMMReg ymmh_regs[CPU_NB_REGS];
 
     uint64_t xcr0;
+
+    /* AMD PowerNow! */
+    uint8_t currVID;
+    uint8_t currFID;
+    uint64_t cycles_at_freq;
+    uint64_t switched_at_cycle;
 } CPUX86State;
 
 CPUX86State *cpu_x86_init(const char *cpu_model);

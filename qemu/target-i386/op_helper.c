@@ -3151,6 +3151,13 @@ void helper_wrmsr(void)
     case MSR_TSC_AUX:
         env->tsc_aux = val;
         break;
+    case MSR_FIDVID_CTL:
+        if(val & ((uint64_t) 1 << 16)) {
+            env->currVID = val >> 8 & (uint64_t) 0b0111111;
+            env->currFID = val >> 0 & (uint64_t) 0b0111111;
+        }
+
+        break;
     default:
         if ((uint32_t)ECX >= MSR_MC0_CTL
             && (uint32_t)ECX < MSR_MC0_CTL + (4 * env->mcg_cap & 0xff)) {
@@ -3167,7 +3174,7 @@ void helper_wrmsr(void)
 
 void helper_rdmsr(void)
 {
-    uint64_t val;
+    uint64_t val = 0;
 
     helper_svm_check_intercept_param(SVM_EXIT_MSR, 0);
 
@@ -3283,6 +3290,23 @@ void helper_rdmsr(void)
         break;
     case MSR_MCG_STATUS:
         val = env->mcg_status;
+        break;
+    case MSR_FIDVID_CTL:
+        val = (uint64_t) 0b00000000000000000000 << 32; /*StpGntTOCnt */
+        break;
+    case MSR_FIDVID_STATUS:
+        val = 
+            (uint64_t) 0b1              << 61 | /* IntPstateSup */
+            (uint64_t) 0b000            << 57 | /* AltVidOffset */
+            (uint64_t) 0b0              << 56 | /* PstateStep */
+            (uint64_t) 0b001000         << 48 | /* MaxVID */
+            (uint64_t) 0b001000         << 40 | /* StartVID */
+            (uint64_t) env->currVID     << 32 | /* CurrVID */
+            (uint64_t) 0b0              << 31 | /* FidVidPending */
+            (uint64_t) 0b001000         << 24 | /* MaxRampVID */
+            (uint64_t) 0b011100         << 16 | /* MaxFID */
+            (uint64_t) 0b011100         <<  8 | /* StartFID */
+            (uint64_t) env->currFID     <<  0;  /* CurrFID */
         break;
     default:
         if ((uint32_t)ECX >= MSR_MC0_CTL

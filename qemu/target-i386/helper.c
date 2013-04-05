@@ -1231,6 +1231,10 @@ CPUX86State *cpu_x86_init(const char *cpu_model)
 
     qemu_init_vcpu(env);
 
+    /* specify initial fid/vid */
+    env->currVID = 0b001000;
+    env->currFID = 0b011100;
+
     return env;
 }
 

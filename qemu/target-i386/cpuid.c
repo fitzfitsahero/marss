@@ -285,9 +285,12 @@ static x86_def_t builtin_x86_defs[] = {
         .vendor1 = CPUID_VENDOR_AMD_1,
         .vendor2 = CPUID_VENDOR_AMD_2,
         .vendor3 = CPUID_VENDOR_AMD_3,
-        .family = 6,
-        .model = 2,
-        .stepping = 3,
+        //.family = 6,
+        //.model = 2,
+        //.stepping = 3,
+        .family = 15,
+        .model = 95,
+        .stepping = 2,
         .features = PPRO_FEATURES |
             CPUID_MTRR | CPUID_CLFLUSH | CPUID_MCA |
             CPUID_PSE36,
@@ -1204,6 +1207,9 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *ebx = 0x42004200;
         *ecx = 0x02008140;
         *edx = 0;
+        break;
+    case 0x80000007:
+        *edx = 0x00000006;
         break;
     case 0x80000008:
         /* virtual & phys address size in low 2 bytes. */

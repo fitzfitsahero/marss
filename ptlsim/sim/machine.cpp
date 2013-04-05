@@ -259,6 +259,26 @@ int BaseMachine::run(PTLsimConfig& config)
         clock_qemu_io_events();
 
 		foreach (i, coremodel.per_cycle_signals.size()) {
+            Context &ctx = contextof(i);
+            unsigned frequency_mhz = 0;
+
+            switch(ctx.currFID) {
+                case 0b000110: frequency_mhz = 1400; break;
+                case 0b001101: frequency_mhz = 2100; break;
+                case 0b010011: frequency_mhz = 2700; break;
+                case 0b011001: frequency_mhz = 3300; break;
+                case 0b011100: frequency_mhz = 3600; break;
+            }
+            
+            if (frequency_mhz > 0) {
+                W64 next_cycle_to_execute = ctx.switched_at_cycle +
+                    ctx.cycles_at_freq * (3600.0 /(float)frequency_mhz);
+                if(next_cycle_to_execute > sim_cycle)
+                    continue;
+
+                ctx.cycles_at_freq++;
+            }
+
 			if (logable(4))
 				ptl_logfile << "Per-Cycle-Signal : " <<
 					coremodel.per_cycle_signals[i]->get_name() << endl;

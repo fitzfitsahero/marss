@@ -23,6 +23,8 @@
 #include <ooo-const.h>
 #include <ooo-stats.h>
 
+#include <stdint.h>
+
 /* With these disabled, simulation is faster */
 #define ENABLE_CHECKS
 #define ENABLE_LOGGING

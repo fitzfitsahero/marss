@@ -698,6 +698,12 @@ namespace OOO_CORE_MODEL {
 
         StatObj<W64> cycles;
 
+        StatObj<W64> cycles_1400;
+        StatObj<W64> cycles_2100;
+        StatObj<W64> cycles_2700;
+        StatObj<W64> cycles_3300;
+        StatObj<W64> cycles_3600;
+
 		StatObj<W64> iq_reads;
 		StatObj<W64> iq_writes;
 		StatObj<W64> iq_fp_reads;
@@ -709,6 +715,11 @@ namespace OOO_CORE_MODEL {
 			  , writeback(parent)
 			  , commit(parent)
 			  , cycles("cycles", parent)
+              , cycles_1400("cycles @ 1400MHz", parent)
+              , cycles_2100("cycles @ 2100MHz", parent)
+              , cycles_2700("cycles @ 2700MHz", parent)
+              , cycles_3300("cycles @ 3300MHz", parent)
+              , cycles_3600("cycles @ 3600MHz", parent)
 			  , iq_reads("iq_reads", parent)
 			  , iq_writes("iq_writes", parent)
 			  , iq_fp_reads("iq_fp_reads", parent)

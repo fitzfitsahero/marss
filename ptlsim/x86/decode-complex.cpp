@@ -677,6 +677,12 @@ bool assist_fxrstor(Context& ctx) {
 bool assist_wrmsr(Context& ctx) {
   ctx.eip = ctx.reg_selfrip;
   ASSIST_IN_QEMU(helper_wrmsr);
+
+  if((ctx.get(REG_rcx) & 0xFFFFFFFF) == 0xC0010041) {
+      ctx.switched_at_cycle = sim_cycle;
+      ctx.cycles_at_freq = 0;
+  }
+
   ctx.eip = ctx.reg_nextrip;
   return true;
 }

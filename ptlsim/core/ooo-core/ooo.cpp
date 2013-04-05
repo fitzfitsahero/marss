@@ -277,6 +277,10 @@ OooCore::OooCore(BaseMachine& machine_, W8 num_threads,
     /* Setup Threads */
     foreach(i, threadcount) {
         Context& ctx = machine.get_next_context();
+
+        ctx.switched_at_cycle = sim_cycle;
+        ctx.cycles_at_freq = 0;
+
         ThreadContext* thread = new ThreadContext(*this, i, ctx);
         threads[i] = thread;
         thread->init();
@@ -929,6 +933,14 @@ bool OooCore::runcycle(void* none) {
             assert(0);
             assert_fail(__STRING(0), __FILE__, __LINE__, __PRETTY_FUNCTION__);
         }
+    }
+
+    switch(contextof(get_coreid()).currFID) {
+        case 0b000110: core_stats.cycles_1400++; break;
+        case 0b001101: core_stats.cycles_2100++; break;
+        case 0b010011: core_stats.cycles_2700++; break;
+        case 0b011001: core_stats.cycles_3300++; break;
+        case 0b011100: core_stats.cycles_3600++; break;
     }
 
     core_stats.cycles++;
