@@ -57,8 +57,8 @@ if google_perftools != None:
 error_str = "failure"
 
 # if compiling with g++ add -x c flag
-if "g++" in env['CC'] :
-    env.Append(CCFLAGS = "-x c")
+#if "g++" in env['CC'] :
+env.Append(CCFLAGS = "-x c")
 
 # If we add user space emulator support then 
 # add user space compilation from QEMU's makefile
