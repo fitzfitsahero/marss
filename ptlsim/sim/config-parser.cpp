@@ -389,6 +389,11 @@ void marss_add_config_section(const char* name)
 	config.section(name);
 }
 
+void marss_add_config_int(int& field, const char* name, const char* description)
+{
+	config.add(field, name,description);
+}
+
 /**
  * @brief Add Configuration option of type 'W64'
  *

@@ -186,7 +186,7 @@ struct PTLsimConfig {
   bool help;
   bool run;
   bool stop;
-  bool kill;
+  bool should_kill;
   bool flush_command_queue;
 
   stringbuf core_name;
@@ -274,7 +274,7 @@ struct PTLsimConfig {
   stringbuf tags;
 
   // Test Framework
-  bool run_tests;
+  bool should_run_tests;
 
   //Utilities/Tools
   stringbuf execute_after_kill;

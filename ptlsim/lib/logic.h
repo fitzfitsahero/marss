@@ -1584,7 +1584,8 @@ struct FullyAssociativeTags8bit {
     foreach (i, ((chunkcount + padchunkcount)*16)/8) p[i] = 0xffffffffffffffffLL;
   }
 
-  static const vec_t prep(base_t tag) {
+  //static const vec_t prep(base_t tag) {
+  static vec_t prep(base_t tag) {
     return x86_sse_dupb(tag);
   }
 
@@ -1746,7 +1747,8 @@ struct FullyAssociativeTags16bit {
     foreach (i, ((chunkcount + padchunkcount)*16)/8) p[i] = 0xffffffffffffffffLL;
   }
 
-  static const vec_t prep(base_t tag) {
+  //static const vec_t prep(base_t tag) {
+  static vec_t prep(base_t tag) {
     return x86_sse_dupw(tag);
   }
 

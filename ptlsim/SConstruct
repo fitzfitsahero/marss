@@ -29,6 +29,7 @@ env['CPPPATH'].append("%s/%s" % (qemu_dir, "x86_64-softmmu"))
 
 optimization_defs = '-fno-trapping-math -fstack-protector -fno-exceptions '
 optimization_defs += '-fno-rtti -funroll-loops -fstrict-aliasing '
+#optimization_defs += '-wd10006,3058'
 
 GCC_VERSION = subprocess.Popen([env['CC'], '-dumpversion'],
 				stdout=subprocess.PIPE).communicate()[0].strip()

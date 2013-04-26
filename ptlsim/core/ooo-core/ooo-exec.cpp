@@ -2195,7 +2195,7 @@ void ReorderBufferEntry::issueprefetch(IssueState& state, W64 ra, W64 rb, W64 rc
 
     LoadStoreQueueEntry dummy;
     setzero(dummy);
-    dummy.virtaddr = origaddr;
+    //dummy.virtaddr = origaddr;
     addrgen(dummy, origaddr, virtpage, ra, rb, rc, pteupdate, addr, exception, pfec, annul);
 
     /* Ignore bogus prefetches: */

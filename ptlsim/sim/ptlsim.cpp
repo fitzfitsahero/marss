@@ -153,7 +153,7 @@ void ConfigurationParser<PTLsimConfig>::reset() {
   help=0;
   run = 0;
   stop = 0;
-  kill = 0;
+  should_kill = 0;
   flush_command_queue = 0;
 
   quiet = 0;
@@ -228,7 +228,7 @@ void ConfigurationParser<PTLsimConfig>::reset() {
   tags = "";
 
   // Test Framework
-  run_tests = 0;
+  should_run_tests = 0;
 
   // Utilities/Tools
   execute_after_kill = "";
@@ -251,7 +251,7 @@ void ConfigurationParser<PTLsimConfig>::setup() {
   section("Action (specify only one)");
   add(run,                          "run",                  "Run under simulation");
   add(stop,                         "stop",                 "Stop current simulation run and wait for command");
-  add(kill,                         "kill",                 "Kill PTLsim inside domain (and ptlmon), then shutdown domain");
+  add(should_kill,					"kill",                 "Kill PTLsim inside domain (and ptlmon), then shutdown domain");
   add(flush_command_queue,          "flush",                "Flush all queued commands, stop the current simulation run and wait");
 
   section("General Logging Control");
@@ -333,7 +333,7 @@ void ConfigurationParser<PTLsimConfig>::setup() {
 
   // Test Framework
   section("Unit Test Framework");
-  add(run_tests,            "run-tests",            "Run Test cases");
+  add(should_run_tests,            "run-tests",            "Run Test cases");
 
   // Utilities/Tools
   section("options for tools/utilities");
@@ -523,7 +523,7 @@ static void flush_stats()
 
 static void kill_simulation()
 {
-    assert(config.kill || config.kill_after_run);
+    assert(config.should_kill || config.kill_after_run);
 
     ptl_logfile << "Received simulation kill signal, stopped the simulation and killing the VM\n";
 #ifdef TRACE_RIP
@@ -621,7 +621,7 @@ if ((config.loglevel > 0) & (config.start_log_at_rip == INVALIDRIP) & (config.st
       config.run = 0;
   }
 
-  if(config.run && !config.kill && !config.stop) {
+  if(config.run && !config.should_kill && !config.stop) {
 	  start_simulation = 1;
   }
 
@@ -635,14 +635,14 @@ if ((config.loglevel > 0) & (config.start_log_at_rip == INVALIDRIP) & (config.st
           config.run = false;
   }
 
-  if(config.kill) {
+  if(config.should_kill) {
 	  config.run = false;
   }
 
   if (first_time) {
     if (!config.quiet) {
       print_sysinfo(cerr);
-      if (!(config.run | config.kill))
+      if (!(config.run | config.should_kill))
         cerr << "Simulator is now waiting for a 'run' command." << endl << flush;
     }
     print_banner(ptl_logfile);
@@ -653,7 +653,7 @@ if ((config.loglevel > 0) & (config.start_log_at_rip == INVALIDRIP) & (config.st
     first_time = false;
   }
 
-  int total = config.run + config.stop + config.kill;
+  int total = config.run + config.stop + config.should_kill;
   if (total > 1) {
     ptl_logfile << "Warning: only one action (from -run, -stop, -kill) can be specified at once" << endl << flush;
     cerr << "Warning: only one action (from -run, -stop, -kill) can be specified at once" << endl << flush;
@@ -859,7 +859,7 @@ extern "C" void ptl_machine_configure(const char* config_str_) {
         config.help=0;
     }
 
-    if(config.kill) {
+    if(config.should_kill) {
         flush_stats();
         kill_simulation();
     }
@@ -899,7 +899,7 @@ extern "C" void ptl_machine_configure(const char* config_str_) {
 
     ptl_machine.disable_dump();
 
-    if(config.run_tests) {
+    if(config.should_run_tests) {
         in_simulation = 1;
     }
 }
@@ -1268,8 +1268,8 @@ extern "C" uint8_t ptl_simulate() {
 		return 0;
 	}
 
-    // If config.run_tests is enabled, then run testcases
-    if(config.run_tests) {
+    // If config.should_run_tests is enabled, then run testcases
+    if(config.should_run_tests) {
         run_tests();
     }
 
@@ -1363,7 +1363,7 @@ extern "C" uint8_t ptl_simulate() {
 
 	machine->run(config);
 
-	if (config.stop_at_insns <= total_insns_committed || config.kill == true
+	if (config.stop_at_insns <= total_insns_committed || config.should_kill == true
 			|| config.stop == true || config.stop_at_cycle < sim_cycle) {
 		machine->stopped = 1;
 	}
@@ -1414,7 +1414,7 @@ extern "C" uint8_t ptl_simulate() {
 
     flush_stats();
 
-	if(config.kill || config.kill_after_run) {
+	if(config.should_kill || config.kill_after_run) {
         kill_simulation();
 	}
 

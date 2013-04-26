@@ -1651,7 +1651,7 @@ void ptl_qemu_initialized(void)
     qemu_initialized = 1;
 
     // If config.run_tests is enabled, then run testcases
-    if(config.run_tests) {
+    if(config.should_run_tests) {
         run_tests();
     }
 

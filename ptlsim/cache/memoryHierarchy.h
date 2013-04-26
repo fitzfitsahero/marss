@@ -205,7 +205,8 @@ namespace Memory {
     void reset();
 
 	// return the number of cycle used to flush the caches
-    int flush(uint8_t coreid);
+    //int flush(uint8_t coreid); Comparing a unsigned int with -1?
+    int flush(int8_t coreid);
 
 	// for debugging
     void dump_info(ostream& os);

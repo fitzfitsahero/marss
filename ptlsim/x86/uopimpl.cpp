@@ -760,6 +760,8 @@ inline bool evaluate_cond(int ra, int rb) {
     return ((!!(ra & FLAG_ZF)) | ((!!(ra & FLAG_SF)) != (!!(rb & FLAG_OF))));
   case 15: // {1, REG_zf,   REG_of},   // !zf & (sf == of): jnle jg (*)
     return !((!!(ra & FLAG_ZF)) | ((!!(ra & FLAG_SF)) != (!!(rb & FLAG_OF))));
+  default:
+	return 0;
   }
 }
 

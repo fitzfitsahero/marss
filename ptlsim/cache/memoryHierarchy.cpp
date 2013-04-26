@@ -115,7 +115,7 @@ void MemoryHierarchy::reset()
 	eventQueue_.reset();
 }
 
-int MemoryHierarchy::flush(uint8_t coreid)
+int MemoryHierarchy::flush(int8_t coreid)
 {
 	int delay = 0;
 

@@ -42,6 +42,7 @@ enum {
   OPTION_TYPE_STRING  = 3,
   OPTION_TYPE_TRAILER = 4,
   OPTION_TYPE_BOOL    = 5,
+  OPTION_TYPE_INT	  = 6,
   OPTION_TYPE_SECTION = -1
 };
 
@@ -70,6 +71,10 @@ struct ConfigurationParser: public T {
   ConfigurationParserBase options;
 
   ConfigurationParser() { reset(); }
+
+  void add(int& field, const char* name, const char* description) {
+    options.addentry(this, &field, OPTION_TYPE_INT, name, description);
+  }
 
   void add(W64& field, const char* name, const char* description) {
     options.addentry(this, &field, OPTION_TYPE_W64, name, description);
@@ -120,6 +125,8 @@ void free_command_list(dynarray<char*>& list);
 
 extern "C" {
 void marss_add_config_section(const char* name);
+
+void marss_add_config_int(int& field, const char* name, const char* description);
 
 void marss_add_config_W64(W64& field, const char* name, const char* description);
 

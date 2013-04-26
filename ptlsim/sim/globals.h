@@ -205,10 +205,10 @@ union W64orDouble {
   struct { W64 mantissa:51, qnan:1, exponent:11, negative:1; } ieeenan;
 };
 
-static inline const float W32toFloat(W32 x) { union W32orFloat c; c.w = x; return c.f; }
-static inline const W32 FloatToW32(float x) { union W32orFloat c; c.f = x; return c.w; }
-static inline const double W64toDouble(W64 x) { union W64orDouble c; c.w = x; return c.d; }
-static inline const W64 DoubleToW64(double x) { union W64orDouble c; c.d = x; return c.w; }
+static inline float W32toFloat(W32 x) { union W32orFloat c; c.w = x; return c.f; }
+static inline W32 FloatToW32(float x) { union W32orFloat c; c.f = x; return c.w; }
+static inline double W64toDouble(W64 x) { union W64orDouble c; c.w = x; return c.d; }
+static inline W64 DoubleToW64(double x) { union W64orDouble c; c.d = x; return c.w; }
 
 //
 // Functional constructor
