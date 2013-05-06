@@ -9,6 +9,7 @@
  *  Copyright 2009-2010 Avadh Patel <apatel@cs.binghamton.edu>
  */
 
+#include <assert.h>
 #include <globals.h>
 #include <elf.h>
 #include <ptlsim.h>
@@ -17,11 +18,6 @@
 
 #include <ooo.h>
 #include <memoryHierarchy.h>
-
-#ifndef ENABLE_CHECKS
-#undef assert
-#define assert(x) (x)
-#endif
 
 #ifndef ENABLE_LOGGING
 #undef logable
@@ -1705,6 +1701,16 @@ int ReorderBufferEntry::issueload(LoadStoreQueueEntry& state, Waddr& origaddr, W
         assert(sfra == NULL);
 
         load_store_second_phase = 1;
+             if (sizeshift == 1) 
+				 assert((physaddr & 0x1) == 0 && "Shouldn't see me!");
+        else if (sizeshift == 2) 
+			assert((physaddr & 0x3) == 0 && "Shouldn't see me!");
+        else if (sizeshift == 3) {
+			if((physaddr & 0x07) == 0)
+				assert((physaddr & 0x7) == 0 && "Shouldn't see me!");
+		}
+        else if (sizeshift == 4) 
+			assert((physaddr & 0xF) == 0 && "Shouldn't see me!");
         data = (annul) ? 0 : thread.ctx.loadphys(physaddr, true,
                 sizeshift);
         state.data = data;
