@@ -237,6 +237,13 @@ namespace Memory {
         allControllers_.push(cont);
     }
 
+	void add_cache_mem_controller(Controller* cont, bool mem) {
+		if(mem) {
+			allControllers_.push(cont);
+			memoryController_ = cont;
+		}
+	}
+
     void add_interconnect(Interconnect* conn) {
         allInterconnects_.push(conn);
     }

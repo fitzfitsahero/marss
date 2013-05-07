@@ -45,7 +45,7 @@ MemoryController::MemoryController(W8 coreid, const char *name,
 	Controller(coreid, name, memoryHierarchy)
     , new_stats(name, &memoryHierarchy->get_machine())
 {
-    memoryHierarchy_->add_cache_mem_controller(this);
+    memoryHierarchy_->add_cache_mem_controller(this, true);
 
     if(!memoryHierarchy_->get_machine().get_option(name, "latency", latency_)) {
         latency_ = 50;
