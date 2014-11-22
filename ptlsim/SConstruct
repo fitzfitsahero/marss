@@ -43,6 +43,7 @@ if int(debug):
 		env.Append(CCFLAGS = '-ggdb3')
 		env.Append(CCFLAGS = '-g3')
 		env.Append(CCFLAGS = '-O0')
+    env.Append(CCFLAGS = '-fsanitize=undefined')
 
     # Enable tests
     env.Append(CCFLAGS = '-DENABLE_TESTS')
