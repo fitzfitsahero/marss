@@ -32,11 +32,9 @@ optimization_defs += '-fno-rtti -funroll-loops -fstrict-aliasing '
 
 env.Append(CCFLAGS = ' -fdiagnostics-color=always ')
 env.Append(CCFLAGS = ' -std=gnu++11 ')
-env.Append(CCFLAGS = ' -fpermissive ')
 
 GCC_VERSION = subprocess.Popen([env['CC'], '-dumpversion'],
 				stdout=subprocess.PIPE).communicate()[0].strip()
-GCC_MAJOR_MINOR_VERSION = re.match(r'\d*\.\d+',GCC_VERSION).group() #e.g. returns 4.2 for 4.2.2
 debug = ARGUMENTS.get('debug', 0)
 if int(debug):
 
