@@ -269,6 +269,17 @@ struct RIPVirtPhys: public RIPVirtPhysBase {
   bool operator ==(const RIPVirtPhys& b) const {
       return (rip == b.rip);
   }
+
+  inline void reset() {
+    rip = 0;
+    mfnlo = 0;
+    use64 = 0;
+    kernel = 0;
+    padlo = 0;
+    mfnhi = 0;
+    df = 0;
+    padhi = 0;
+  }
 };
 
 static inline ostream& operator <<(ostream& os, const RIPVirtPhysBase& rvp) { return rvp.print(os); }
@@ -287,7 +298,21 @@ struct SFR {
   W64 data;
   W64 addrvalid:1, invalid:1, datavalid:1, physaddr:45, bytemask:8, tag:8;
   W64 virtaddr;
+
+  inline void reset();
 };
+
+inline void SFR::reset()
+{
+  this->data = 0;
+  this->addrvalid = 0;
+  this->invalid = 0;
+  this->datavalid = 0;
+  this->physaddr = 0;
+  this->bytemask = 0;
+  this->tag = 0;
+  this->virtaddr = 0;
+}
 
 stringbuf& operator <<(stringbuf& sb, const SFR& sfr);
 
@@ -316,7 +341,18 @@ struct IssueState {
 
     SFR st;
   };
+
+  inline void reset();
 };
+
+inline void IssueState::reset()
+{
+  this->reg.rddata = 0;
+  this->ldreg.rddata = 0;
+  this->brreg.riptaken = 0;
+  this->brreg.ripseq = 0;
+  this->st.reset();
+}
 
 ostream& operator <<(ostream& os, const IssueState& ctx);
 
@@ -1581,7 +1617,7 @@ struct TransOp: public TransOpBase {
   }
 
   void init(int opcode, int rd, int ra, int rb, int rc, int size, W64s rbimm = 0, W64s rcimm = 0, W32 setflags = 0, int memid = 0)  {
-    setzero(*this);
+    this->reset();
     this->opcode = opcode;
     this->rd = rd;
     this->ra = ra;
@@ -1591,6 +1627,40 @@ struct TransOp: public TransOpBase {
     this->rbimm = rbimm;
     this->rcimm = rcimm;
     this->setflags = setflags;
+  }
+
+  // Reset to initial values
+  void reset() {
+    opcode = 0;
+    size = 0;
+    extshift = 0;
+    unaligned = 0;
+    cond = 0;
+    setflags = 0;
+    nouserflags = 0;
+    internal = 0;
+    locked = 0;
+    cachelevel = 0;
+    datatype = 0;
+    bytes = 0;
+    som = 0;
+    eom = 0;
+    is_sse = 0;
+    is_x87 = 0;
+    rd = 0;
+    ra = 0;
+    rb = 0;
+    rc = 0;
+    bbindex = 0;
+    final_insn_in_bb = 0;
+    final_arch_in_insn = 0;
+    final_flags_in_insn = 0;
+    any_flags_in_insn = 0;
+    marked = 0;
+    rbimm = 0;
+    rcimm = 0;
+    riptaken = 0;
+    ripseq = 0;
   }
 };
 

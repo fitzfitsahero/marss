@@ -552,7 +552,7 @@ namespace {
     {
         // First fix the RIP
         RIPVirtPhys rvp;
-        setzero(rvp);
+        rvp.reset();
         rvp.rip = 0x410200;
 
         BasicBlock* bb = bbcache[0].get(rvp);

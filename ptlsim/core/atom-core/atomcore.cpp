@@ -153,7 +153,9 @@ void AtomOp::reset()
 
     num_uops_used = 0;
     foreach(i, MAX_UOPS_PER_ATOMOP) {
-        setzero(uops[i]);
+        for(auto j : uops) {
+          j.reset();
+        }
         synthops[i] = 0;
         dest_registers[i] = -1;
         dest_register_values[i] = -1;
@@ -688,7 +690,7 @@ W8 AtomOp::execute_uop(W8 idx)
     rcflags = thread->register_flags[archreg_remap_table[uop.rc]];
 
     /* Clear IssueState */
-    setzero(state);
+    state.reset();
 
     bool ld = isload(uop.opcode);
     bool st = isstore(uop.opcode);
@@ -1840,9 +1842,12 @@ void AtomThread::reset()
 
     commitbuf.reset();
 
-    setzero(register_invalid);
-    setzero(register_owner);
-    setzero(register_flags);
+    for(int i = 0; i < TRANSREG_COUNT; i++)
+    {
+      register_invalid[i] = false;
+      register_owner[i]->reset();
+      register_flags[i] = 0;
+    }
 
     register_flags[REG_flags] = ctx.reg_flags;
 }

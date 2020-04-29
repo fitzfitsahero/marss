@@ -290,7 +290,7 @@ struct HistoryBuffer: public array<T, size> {
 
   void reset() {
     current = size-1;
-    setzero(this->data);
+    this.clear();
   }
 
   HistoryBuffer() {

@@ -699,7 +699,7 @@ TraceDecoder::TraceDecoder(const RIPVirtPhys& rvp) {
 TraceDecoder::TraceDecoder(Waddr rip, bool use64, bool kernel, bool df) {
     reset();
     bb.reset();
-    setzero(bb.rip);
+    bb.rip.reset();
     bb.rip.rip = rip;
     bb.rip.use64 = use64;
     bb.rip.kernel = kernel;
@@ -727,7 +727,7 @@ TraceDecoder::TraceDecoder(Context& ctx, Waddr rip) {
     vm86 = (ctx.eflags >> VM_SHIFT) & 1;
 
     bb.reset();
-    setzero(bb.rip);
+    bb.rip.reset();
     bb.rip.rip = rip;
     bb.rip.use64 = use64;
     bb.rip.kernel = kernel;
