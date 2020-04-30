@@ -1845,7 +1845,10 @@ void AtomThread::reset()
     for(int i = 0; i < TRANSREG_COUNT; i++)
     {
       register_invalid[i] = false;
-      register_owner[i]->reset();
+      if(register_owner[i] != NULL)
+      {
+        register_owner[i]->reset();
+      }
       register_flags[i] = 0;
     }
 
